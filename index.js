@@ -18,8 +18,7 @@ async function run() {
     , maxRetries = getRequiredInput('octokit_max_retries')
     , removeFlag =  getRequiredInput('remove_flag')
   ;
-
-// testing 
+ //testing 
   // const since = '2021-12-01T00:12:23'
   // , days = 30
   //   , token = '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'
@@ -30,13 +29,9 @@ async function run() {
   // ;
 
   
-  if((removeFlag.toLowerCase() != 'yes') && (removeFlag.toLowerCase() !== 'no')) {
-    throw new Error(`Provide a valid 'remove_flag - Yes/No'.`)
-  }
+  
 
-  if((!Number(days)) || (days < 0)) {
-    throw new Error('Provide a valid activity_days - It accept only Positive Number');
-  }
+  
 
   let regex = /^[\w\.\_\-]+((,|-)[\w\.\_\-]+)*[\w\.\_\-]+$/g;
   let validate_org = regex.test(organizationinp);
@@ -47,17 +42,7 @@ async function run() {
   let sinceregex = /^(20)\d\d-(0[1-9]|1[012])-([012]\d|3[01])T([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/ 
 ;
 
-  let fromDate;
-  if (since) {
-    let validate_since = sinceregex.test(since);
-    if((!validate_since)) {
-      throw new Error('Provide a valid since - It accept only following format - YYYY-MM-DDTHH:mm:ss');
-    }
-    console.log(`Since Date has been specified, using that instead of active_days`)
-    fromDate = dateUtil.getFromDate(since);
-  } else {
-    fromDate = dateUtil.convertDaysToDate(days);
-  }
+  
   
   // Ensure that the output directory exists before we our limited API usage
   await io.mkdirP(outputDir)
@@ -78,17 +63,17 @@ async function run() {
       const userActivity = await orgActivity.getUserActivity(organization, fromDate);
       const jsonresp = userActivity.map(activity => activity.jsonPayload);
       const jsonlist = jsonresp.filter(user => { return user.isActive === false });
-      // console.log(jsonlist)
-      console.log(`******* RemoveFlag - ${removeFlag}`)
+      console.log(jsonlist)
+      //console.log(`******* RemoveFlag - ${removeFlag}`)
       // const removeduserlist = jsonlist;
       // const removeduserlist = [{login:'1649898',email: '', isActive: false, orgs: 'scb-et', commits: 0, issues: 0, issueComments: 0, prComments: 0},
       // {login:'manitest',email: '', isActive: false, orgs: 'scb-et', commits: 0, issues: 0, issueComments: 0, prComments: 0}]; 
-      const removeduserlist = [{login:'Meiyanthan',email: '', isActive: false, orgs: 'internal-test-organization', commits: 0, issues: 0, issueComments: 0, prComments: 0},
+      // const removeduserlist = [{login:'Meiyanthan',email: '', isActive: false, orgs: 'internal-test-organization', commits: 0, issues: 0, issueComments: 0, prComments: 0},
                                 {login:'manitest',email: '', isActive: false, orgs: 'internal-test-organization', commits: 0, issues: 0, issueComments: 0, prComments: 0}];
-      const removeMulUserRes = await removeMultipleUser(orgActivity, organization, removeduserlist, removeFlag);
-      removeMulUserList = [...removeMulUserList, ...removeMulUserRes.removeduserarr];
-      jsonfinallist = [...jsonfinallist, ...jsonlist];
-      rmvconfrm += removeMulUserRes.rmvlen;
+     // const removeMulUserRes = await removeMultipleUser(orgActivity, organization, removeduserlist, removeFlag);
+      // removeMulUserList = [...removeMulUserList, ...removeMulUserRes.removeduserarr];
+      // jsonfinallist = [...jsonfinallist, ...jsonlist];
+      // rmvconfrm += removeMulUserRes.rmvlen;
     }
   }
 
@@ -104,17 +89,17 @@ async function run() {
   saveIntermediateData(outputDir, removeMulUserList);
 
  
-  const totalInactive = jsonfinallist.length;
-  console.log(`rmvconfrm - ${rmvconfrm} & totalInactive - ${totalInactive}`)
+  //const totalInactive = jsonfinallist.length;
+  // console.log(`rmvconfrm - ${rmvconfrm} & totalInactive - ${totalInactive}`)
 
-  core.setOutput('rmuserjson', removeMulUserList);
-  core.setOutput('usercount', totalInactive);
-  if(rmvconfrm === totalInactive){
-    core.setOutput('message', 'Success');
-  }else{
-    core.setOutput('message', 'Failure');
-  }
-
+  /// core.setOutput('rmuserjson', removeMulUserList);
+  // core.setOutput('usercount', totalInactive);
+  //if(rmvconfrm === totalInactive){
+  //  core.setOutput('message', 'Success');
+  //}else{
+  //  core.setOutput('message', 'Failure');
+  //}
+  
   // Convert the JavaScript objects into a JSON payload so it can be output
   // console.log(`User activity data captured, generating inactive user report... `);
   // const data = userActivity.map(activity => activity.jsonPayload)
@@ -139,41 +124,41 @@ async function execute() {
 execute();
 
 
-function getRequiredInput(name) {
-  return core.getInput(name, {required: true});
-}
+//function getRequiredInput(name) {
+ // return core.getInput(name, {required: true});
+//}
 
-async function removeMultipleUser(orgActivity, orgsname, removeduserarr, removeFlag){
-  let rmvlen = 0;
-  if(removeFlag.toLowerCase() === 'yes'){
-    console.log(`**** Attempting to remove inactive user lists from - ${orgsname}. Count of ${removeduserarr.length} ****`)
+//async function removeMultipleUser(orgActivity, orgsname, removeduserarr, removeFlag){
+//  let rmvlen = 0;
+//  if(removeFlag.toLowerCase() === 'yes'){
+//    console.log(`**** Attempting to remove inactive user lists from - ${orgsname}. Count of ${removeduserarr.length} ****`)
 
-    for(const rmuserlist of removeduserarr){
-      let rmusername = rmuserlist.login;
-      let removeuserActivity = await orgActivity.getremoveUserData(orgsname, rmusername);
-      if(removeuserActivity.status === 'success'){
-        console.log(`${rmusername} - Inactive users removed from - ${orgsname}`);
-        Object.assign(rmuserlist, {status:1, description:'user is removed from organization'});
-        rmvlen++;
-      }else{
-        console.log(`${rmusername} - Due to some error not removed from - ${orgsname}`);
-        Object.assign(rmuserlist, {status:0, description:'user is retained from organization'});
-      }
-    }
-  }else{
-    console.log(`**** Skipping the remove inactive user lists from - ${orgsname} process. **** `)
-    rmvlen = removeduserarr.length;
-  }
+//   for(const rmuserlist of removeduserarr){
+//      let rmusername = rmuserlist.login;
+//      let removeuserActivity = await orgActivity.getremoveUserData(orgsname, rmusername);
+//      if(removeuserActivity.status === 'success'){
+//        console.log(`${rmusername} - Inactive users removed from - ${orgsname}`);
+//        Object.assign(rmuserlist, {status:1, description:'user is removed from organization'});
+//        rmvlen++;
+//      }else{
+//        console.log(`${rmusername} - Due to some error not removed from - ${orgsname}`);
+//        Object.assign(rmuserlist, {status:0, description:'user is retained from organization'});
+//      }
+//    }
+//  }else{
+//    console.log(`**** Skipping the remove inactive user lists from - ${orgsname} process. **** `)
+//    rmvlen = removeduserarr.length;
+//  }
 
-  return {removeduserarr: removeduserarr, rmvlen: rmvlen};
-}
+//  return {removeduserarr: removeduserarr, rmvlen: rmvlen};
+//}
 
-function saveIntermediateData(directory, data) {
-  try {
-    const file = path.join(directory, 'organization_removed_users.json');
-    fs.writeFileSync(file, JSON.stringify(data));
-    core.setOutput('report_json', file);
-  } catch (err) {
-    console.error(`Failed to save intermediate data: ${err}`);
-  }
-}
+//function saveIntermediateData(directory, data) {
+ // try {
+  //  const file = path.join(directory, 'organization_removed_users.json');
+   // fs.writeFileSync(file, JSON.stringify(data));
+   // core.setOutput('report_json', file);
+  //} catch (err) {
+   // console.error(`Failed to save intermediate data: ${err}`);
+  //}
+//}
